@@ -24,6 +24,7 @@ async fn main() {
             .accept()
             .await
             .expect("Failed to accept connection");
+
         spawn(handler(stream));
     }
 }
