@@ -10,7 +10,15 @@ use tokio::spawn;
 
 #[tokio::main]
 async fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
+    let port: usize = std::env::var("PORT")
+        .expect("PORT env var not set")
+        .parse()
+        .expect("PORT env var not a number");
+
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
+        .await
+        .unwrap();
+
     loop {
         let (stream, _) = listener.accept().await.unwrap();
         spawn(handle_connection(stream));
