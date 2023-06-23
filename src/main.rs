@@ -17,15 +17,18 @@ async fn main() {
 
     let listener = TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
-        .unwrap();
+        .expect("Failed to bind to port");
 
     loop {
-        let (stream, _) = listener.accept().await.unwrap();
-        spawn(handle_connection(stream));
+        let (stream, _) = listener
+            .accept()
+            .await
+            .expect("Failed to accept connection");
+        spawn(handler(stream));
     }
 }
 
-async fn handle_connection(mut stream: TcpStream) {
+async fn handler(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
     let bytes_read = stream
         .read(&mut buffer)
@@ -33,8 +36,6 @@ async fn handle_connection(mut stream: TcpStream) {
         .expect("Failed to read from stream");
 
     if bytes_read > 0 {
-        let status_line = "HTTP/1.1 200 OK\r\n\r\n";
-
         let contents: String = (0..10)
             .map(|_| {
                 let first_part = get_random_element(&FIRST_PARTS);
@@ -45,9 +46,8 @@ async fn handle_connection(mut stream: TcpStream) {
             })
             .collect();
 
-        let response = format!("{}{}", status_line, contents);
         stream
-            .write_all(response.as_bytes())
+            .write_all(format!("HTTP/1.1 200 OK\r\n\r\n{}", contents).as_bytes())
             .await
             .expect("Failed to write to stream");
         stream.flush().await.expect("Failed to flush stream");
